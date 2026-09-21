@@ -37,6 +37,8 @@ llm:
   keep_alive: "30m"
   timeout_s: 30
   auto_start: true
+  routing_mode: "llm_first"   # Options: "llm_first" (dynamic AI intent), "rules_first", "llm_only"
+
 
 tts:
   engine: "piper"

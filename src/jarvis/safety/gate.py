@@ -3,7 +3,7 @@
 import logging
 from pathlib import Path
 from typing import Any, Callable, Coroutine, Dict, Optional
-from jarvis.actions.registry import ToolDefinition, ToolResult
+from jarvis.actions.registry import ToolDefinition, ToolResult, normalize_tool_params
 from jarvis.config import Config
 
 logger = logging.getLogger("jarvis.safety")
@@ -40,14 +40,15 @@ class SafetyGate:
         """Evaluate tool safety, handle confirmations, and execute safely."""
         risk = tool_def.risk.lower()
         tool_name = tool_def.name
+        clean_params = normalize_tool_params(tool_def, params)
 
         # 1. Check dry_run mode
         if self.dry_run:
-            logger.info(f"[DRY RUN] Would execute tool '{tool_name}' with params: {params}")
+            logger.info(f"[DRY RUN] Would execute tool '{tool_name}' with params: {clean_params}")
             return ToolResult(
                 ok=True,
-                message=f"[Dry Run] I would execute {tool_name} with {params}.",
-                data={"dry_run": True, "tool": tool_name, "params": params},
+                message=f"[Dry Run] I would execute {tool_name} with {clean_params}.",
+                data={"dry_run": True, "tool": tool_name, "params": clean_params},
             )
 
         # 2. File path restriction verification

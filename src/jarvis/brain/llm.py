@@ -253,6 +253,24 @@ class LlmClient:
                 except Exception:
                     continue
 
+        # Try pseudo-execution text pattern: "I would execute <tool> with {<args>}" or "Dry Run I would execute <tool> with <args>"
+        if not tool_calls:
+            matches = re.findall(
+                r"(?:\[?Dry Run\]?\s+)?(?:I would execute|execute)\s+([a-zA-Z0-9_-]+)(?:\s+with\s+(\{.*?\}))?",
+                text,
+                re.IGNORECASE,
+            )
+            for tool_name, raw_args in matches:
+                parsed_args = {}
+                if raw_args:
+                    try:
+                        # Handle python-style dict or json
+                        raw_args_clean = raw_args.replace("'", '"')
+                        parsed_args = json.loads(raw_args_clean)
+                    except Exception:
+                        pass
+                tool_calls.append(ToolCall(name=tool_name, arguments=parsed_args))
+
         for obj in json_objs:
             if not isinstance(obj, dict):
                 continue
@@ -267,3 +285,4 @@ class LlmClient:
                 tool_calls.append(ToolCall(name=name, arguments=args))
 
         return tool_calls
+

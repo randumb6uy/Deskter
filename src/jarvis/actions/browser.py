@@ -8,7 +8,7 @@ from jarvis.actions.registry import ToolResult, tool
 
 @tool(
     name="open_browser",
-    description="Open the user's web browser (Chrome, Edge, Firefox, Brave, or default).",
+    description="Open a blank web browser window (e.g. Chrome, Edge, Brave, or default). Do NOT use when user asks for a specific website like YouTube, GitHub, or Reddit.",
     params={"browser": {"type": "string", "description": "Optional browser name: 'chrome', 'edge', 'firefox', 'brave', or 'default'", "required": False}},
     risk="low",
 )
@@ -76,7 +76,7 @@ def web_search(query: str) -> ToolResult:
 
 @tool(
     name="open_site",
-    description="Open a well-known site (e.g. 'youtube', 'github', 'reddit', 'gmail', 'wikipedia', 'chatgpt').",
+    description="Open a specific popular website or service by name (e.g. YouTube, GitHub, Reddit, Gmail, Netflix, Spotify, ChatGPT). Always use open_site when user mentions a specific website name like 'open youtube' or 'go to reddit'.",
     params={"site_name": {"type": "string", "description": "Name of the website"}},
     risk="low",
 )

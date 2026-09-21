@@ -126,6 +126,9 @@ class TestingAgent:
         # 6. Verify Speech Output & Audio Barge-in
         results.extend(await self._test_audio_tts_pipeline())
 
+        # 7. Verify Cognitive Intent Comprehension (Natural Language, Implicit Controls, General QA, Multi-Action & Pronoun Resolution)
+        results.extend(await self._test_cognitive_intent_reasoning())
+
         total_duration = time.time() - start_time
         total = len(results)
         passed = sum(1 for r in results if r.passed)
@@ -294,21 +297,35 @@ class TestingAgent:
         return results
 
     async def _test_router_integration(self) -> List[TestCaseResult]:
-        """Validate Router execution and event publishing."""
+        """Validate Router execution, cognitive dispatch, and emergency stop."""
         results: List[TestCaseResult] = []
         t0 = time.time()
 
         router = Router(config=self.config, gate=self.gate, bus=self.bus)
         resp = await router.route_and_execute("what time is it")
-        passed = resp.fast_path and len(resp.tool_results) == 1
+        passed = len(resp.tool_results) == 1
         results.append(
             TestCaseResult(
-                name="Router Fast-Path Dispatch",
+                name="Router Intent Dispatch",
                 category="Router",
                 passed=passed,
                 execution_time_ms=(time.time() - t0) * 1000,
-                details=f"Fast path response: '{resp.reply}'",
-                error=None if passed else "Fast path failed to execute.",
+                details=f"Response: '{resp.reply}' (fast_path={resp.fast_path})",
+                error=None if passed else "Router failed to dispatch intent to tool.",
+            )
+        )
+
+        t1 = time.time()
+        resp_stop = await router.route_and_execute("stop")
+        passed_stop = resp_stop.fast_path is True and "Stopping" in resp_stop.reply
+        results.append(
+            TestCaseResult(
+                name="Router Emergency Fast-Path Stop",
+                category="Router",
+                passed=passed_stop,
+                execution_time_ms=(time.time() - t1) * 1000,
+                details=f"Emergency response: '{resp_stop.reply}'",
+                error=None if passed_stop else "Emergency stop fast path failed.",
             )
         )
 
@@ -363,6 +380,102 @@ class TestingAgent:
                     Path(tmp_wav).unlink()
                 except Exception:
                     pass
+
+        return results
+
+    async def _test_cognitive_intent_reasoning(self) -> List[TestCaseResult]:
+        """Validate Cognitive LLM open-ended intent resolution without hardcoded commands."""
+        from jarvis.actions.registry import normalize_tool_name
+        from jarvis.brain.llm import is_ollama_running
+        from jarvis.testing.scenarios import COGNITIVE_INTENT_SCENARIOS
+
+        results: List[TestCaseResult] = []
+        router = Router(config=self.config, gate=self.gate, bus=self.bus)
+
+        # Check if Ollama daemon is active for live cognitive tests
+        ollama_online = is_ollama_running(self.config.llm.host)
+        if not ollama_online:
+            logger.warning("Ollama server not reachable for live cognitive agent tests; skipping live inference.")
+            return results
+
+        for s in COGNITIVE_INTENT_SCENARIOS:
+            t0 = time.time()
+            router.memory.clear()
+            resp = await router.route_and_execute(s.user_input)
+            latency = (time.time() - t0) * 1000
+
+            # Collect all tools invoked
+            called_tools: List[str] = []
+            last_msg = router.memory._messages[-1] if router.memory._messages else {}
+            if "tool_calls" in last_msg and last_msg["tool_calls"]:
+                for tc in last_msg["tool_calls"]:
+                    fn = tc.get("function", {})
+                    if fn.get("name"):
+                        called_tools.append(fn.get("name"))
+            for r in resp.tool_results:
+                if r.data and r.data.get("tool"):
+                    called_tools.append(r.data.get("tool"))
+
+            passed = True
+            error_msg = None
+
+            if not s.expected_tools:
+                # Expect Pure Chat / Direct answer with zero tools
+                if called_tools:
+                    passed = False
+                    error_msg = f"Expected pure chat, but tools were called: {called_tools}"
+                elif not resp.reply:
+                    passed = False
+                    error_msg = "Expected conversational reply, but received empty string"
+            else:
+                called_norms = [normalize_tool_name(ct) for ct in called_tools]
+                for exp_tool in s.expected_tools:
+                    exp_norm = normalize_tool_name(exp_tool)
+                    if not any(exp_norm == cn for cn in called_norms):
+                        passed = False
+                        error_msg = f"Expected tool '{exp_tool}', called tools: {called_tools}"
+                        break
+
+            results.append(
+                TestCaseResult(
+                    name=f"Intent: {s.description}",
+                    category=f"Cognitive - {s.category}",
+                    passed=passed,
+                    execution_time_ms=latency,
+                    details=f"Input: '{s.user_input}' -> Tools: {called_tools or 'Pure Chat'} | Reply: '{resp.reply[:60]}...'",
+                    error=error_msg,
+                )
+            )
+
+        # Multi-Turn Pronoun Resolution Test
+        t_mt = time.time()
+        router.memory.clear()
+        await router.route_and_execute("open notepad")
+        resp_t2 = await router.route_and_execute("now close it")
+        latency_mt = (time.time() - t_mt) * 1000
+
+        called_t2: List[str] = []
+        last_msg_t2 = router.memory._messages[-1] if router.memory._messages else {}
+        if "tool_calls" in last_msg_t2 and last_msg_t2["tool_calls"]:
+            for tc in last_msg_t2["tool_calls"]:
+                fn = tc.get("function", {})
+                if fn.get("name"):
+                    called_t2.append(fn.get("name"))
+        for r in resp_t2.tool_results:
+            if r.data and r.data.get("tool"):
+                called_t2.append(r.data.get("tool"))
+
+        passed_mt = any("close" in ct.lower() for ct in called_t2)
+        results.append(
+            TestCaseResult(
+                name="Intent: Multi-Turn Pronoun Resolution ('open notepad' -> 'now close it')",
+                category="Cognitive - Context Memory",
+                passed=passed_mt,
+                execution_time_ms=latency_mt,
+                details=f"Resolved 'it' to notepad -> Called {called_t2}",
+                error=None if passed_mt else f"Failed to resolve pronoun 'it' to close_app. Called: {called_t2}",
+            )
+        )
 
         return results
 

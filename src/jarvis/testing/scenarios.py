@@ -280,3 +280,150 @@ DEFAULT_SCENARIOS: List[Scenario] = [
         expected_tool="antigravity_model_info",
     ),
 ]
+
+
+@dataclass
+class CognitiveIntentScenario:
+    """Specification of an open-ended natural language intent scenario."""
+    category: str
+    description: str
+    user_input: str
+    expected_tools: List[str] = field(default_factory=list)  # Empty list indicates pure chat / no tools
+
+
+COGNITIVE_INTENT_SCENARIOS: List[CognitiveIntentScenario] = [
+    # 1. Implicit Hardware & System Controls
+    CognitiveIntentScenario(
+        category="Implicit Intent",
+        description="Implicit volume reduction ('too loud')",
+        user_input="it's way too loud in here, turn it down",
+        expected_tools=["set_volume"],
+    ),
+    CognitiveIntentScenario(
+        category="Implicit Intent",
+        description="Implicit display dimming ('eyes hurting')",
+        user_input="my eyes are hurting, please dim the display",
+        expected_tools=["set_brightness"],
+    ),
+    CognitiveIntentScenario(
+        category="Implicit Intent",
+        description="Casual battery check ('juice left')",
+        user_input="how much battery juice is left in my laptop?",
+        expected_tools=["get_battery"],
+    ),
+    CognitiveIntentScenario(
+        category="Implicit Intent",
+        description="Workstation security intent ('stepping away, lock up')",
+        user_input="I am stepping away from my desk, lock up",
+        expected_tools=["lock_screen"],
+    ),
+    CognitiveIntentScenario(
+        category="Implicit Intent",
+        description="Natural time query",
+        user_input="what time is it right now",
+        expected_tools=["get_time"],
+    ),
+
+    # 2. Natural Web Search & Popular Destinations
+    CognitiveIntentScenario(
+        category="Web & Search",
+        description="Natural web search request in browser",
+        user_input="search for latest Python 3.12 release notes in browser",
+        expected_tools=["web_search"],
+    ),
+    CognitiveIntentScenario(
+        category="Web & Search",
+        description="Direct named website launch",
+        user_input="open youtube for me",
+        expected_tools=["open_site"],
+    ),
+
+    # 3. Applications & File Management
+    CognitiveIntentScenario(
+        category="Apps & Files",
+        description="Natural application launch request",
+        user_input="launch visual studio code",
+        expected_tools=["open_app"],
+    ),
+    CognitiveIntentScenario(
+        category="Apps & Files",
+        description="Natural folder opening request",
+        user_input="let me see my downloads folder",
+        expected_tools=["open_folder"],
+    ),
+
+    # 4. Notes & Reminders
+    CognitiveIntentScenario(
+        category="Notes & Timers",
+        description="Natural quick note taking",
+        user_input="take a note that meeting is rescheduled to 4 PM",
+        expected_tools=["take_note"],
+    ),
+    CognitiveIntentScenario(
+        category="Notes & Timers",
+        description="Read saved notes request",
+        user_input="read my saved notes",
+        expected_tools=["get_notes"],
+    ),
+
+    # 5. Antigravity Voice Bridge Queries
+    CognitiveIntentScenario(
+        category="Antigravity Bridge",
+        description="Natural token usage inquiry",
+        user_input="how many tokens have I used so far?",
+        expected_tools=["antigravity_token_usage"],
+    ),
+    CognitiveIntentScenario(
+        category="Antigravity Bridge",
+        description="Active Antigravity model check",
+        user_input="what model is loaded in antigravity?",
+        expected_tools=["antigravity_model_info"],
+    ),
+    CognitiveIntentScenario(
+        category="Antigravity Bridge",
+        description="Remaining quota inquiry",
+        user_input="check my remaining quota",
+        expected_tools=["antigravity_quota"],
+    ),
+
+    # 6. General Conversational QA (No tools expected)
+    CognitiveIntentScenario(
+        category="General Knowledge",
+        description="Direct factual answer (Capital of Japan)",
+        user_input="What is the capital of Japan?",
+        expected_tools=[],
+    ),
+    CognitiveIntentScenario(
+        category="General Knowledge",
+        description="Concept explanation (Async programming)",
+        user_input="Explain async programming in one simple sentence",
+        expected_tools=[],
+    ),
+    CognitiveIntentScenario(
+        category="General Knowledge",
+        description="Creative writing request (Short poem)",
+        user_input="Can you write a two-line poem about rain?",
+        expected_tools=[],
+    ),
+    CognitiveIntentScenario(
+        category="General Knowledge",
+        description="Technical history trivia (Linux creator)",
+        user_input="Who created Linux and when?",
+        expected_tools=[],
+    ),
+
+    # 7. Compound Multi-Action Requests
+    CognitiveIntentScenario(
+        category="Compound Actions",
+        description="Multi-action: display brightness + launch application",
+        user_input="dim the screen to 30 and open notepad",
+        expected_tools=["set_brightness", "open_app"],
+    ),
+    CognitiveIntentScenario(
+        category="Compound Actions",
+        description="Multi-action: audio volume + time query",
+        user_input="set volume to 20 and tell me what time it is",
+        expected_tools=["set_volume", "get_time"],
+    ),
+]
+

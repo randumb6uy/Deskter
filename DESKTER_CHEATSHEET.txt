@@ -1,9 +1,25 @@
 ================================================================================
-                    DESKTER OFFLINE AI ASSISTANT CHEATSHEET
+                    DESKTER COGNITIVE AI ASSISTANT CHEATSHEET
 ================================================================================
-Everything you can ask or tell Deskter (Voice & Text Console).
-All commands run 100% offline on your Windows laptop.
+Deskter is powered by an LLM-First Cognitive Brain (Local Ollama Qwen 2.5 on GPU).
+You do NOT need to memorize hardcoded phrases! You can speak casually, implicitly,
+ask general questions, or request multi-step actions in plain English.
+All AI reasoning and tools run 100% offline on your Windows laptop.
 ================================================================================
+
+--------------------------------------------------------------------------------
+0. NATURAL & CASUAL COGNITIVE EXAMPLES (ZERO HARDCODING)
+--------------------------------------------------------------------------------
+  * "It's way too loud in here, turn it down"  -> Calls set_volume(level="down")
+  * "My eyes are hurting, dim the screen"     -> Calls set_brightness(level=30)
+  * "How much battery juice is left?"          -> Calls get_battery()
+  * "I am stepping away from my desk, lock up" -> Calls lock_screen()
+  * "Dim the screen to 30 and open notepad"    -> Multi-action: set_brightness + open_app
+  * "Open notepad" -> "Now close it"           -> Contextual pronoun memory resolution
+  * "What is the capital of Japan?"            -> Pure conversational voice answer (no tools)
+  * "Explain async programming in one sentence" -> Direct voice technical explanation
+  * "Can you write a two-line poem about rain?" -> Direct creative answer
+  * "Stop" / "Cancel"                          -> Immediate emergency interrupt
 
 --------------------------------------------------------------------------------
 1. GOOGLE ANTIGRAVITY (AGY) VOICE BRIDGE & CODING

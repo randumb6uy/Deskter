@@ -18,7 +18,7 @@ logger = logging.getLogger("jarvis.actions.system")
 
 @tool(
     name="set_volume",
-    description="Adjust the system audio volume (e.g. '50', 'up', 'down', 'mute', 'max').",
+    description="Adjust system master volume (0-100), or adjust relative volume ('up', 'down', 'mute', 'max'). Call when user asks to change volume or says 'too loud', 'turn it down', 'crank it up', 'can't hear', 'volume up', 'volume down', 'mute audio'.",
     params={"level": {"type": "string", "description": "Volume level: 0-100 integer, 'up', 'down', 'mute', 'unmute', or 'max'"}},
     risk="low",
 )
