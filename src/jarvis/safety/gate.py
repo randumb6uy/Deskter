@@ -91,15 +91,15 @@ class SafetyGate:
         if risk == "medium":
             logger.info(f"[Medium Risk] Executing {tool_name} with params {params}")
 
-        # 5. Execute via tool definition
+        # 5. Execute via tool definition (use normalized params, not raw)
         try:
             import inspect
             if inspect.iscoroutinefunction(tool_def.func):
-                result = await tool_def.func(**params)
+                result = await tool_def.func(**clean_params)
             else:
                 import asyncio
                 loop = asyncio.get_running_loop()
-                result = await loop.run_in_executor(None, lambda: tool_def.func(**params))
+                result = await loop.run_in_executor(None, lambda: tool_def.func(**clean_params))
 
             if isinstance(result, ToolResult):
                 return result

@@ -110,22 +110,50 @@ def mute(state: str = "toggle") -> ToolResult:
 
 @tool(
     name="set_brightness",
-    description="Set display brightness level (0 to 100).",
-    params={"level": {"type": "integer", "description": "Brightness percentage from 0 to 100"}},
+    description="Adjust display brightness level (0-100), or adjust relative brightness ('up', 'down', 'increase', 'decrease', 'max', 'min'). Call when user asks to change brightness or says 'too bright', 'dim the screen', 'brighten up', 'screen too dark'.",
+    params={"level": {"type": "string", "description": "Brightness level: 0-100 integer, 'up', 'down', 'increase', 'decrease', 'max', or 'min'"}},
     risk="low",
 )
-def set_brightness(level: int) -> ToolResult:
-    """Set screen brightness."""
+def set_brightness(level: Union[int, str]) -> ToolResult:
+    """Adjust screen brightness with relative and absolute values."""
     try:
         import screen_brightness_control as sbc
-        target = max(0, min(100, int(level)))
+
+        # Get current brightness
+        current_list = sbc.get_brightness()
+        current = current_list[0] if isinstance(current_list, list) else current_list
+
+        level_str = str(level).lower().strip()
+
+        if level_str in ["up", "increase", "higher", "brighter", "brighten"]:
+            target = min(100, current + 15)
+        elif level_str in ["down", "decrease", "lower", "dim", "dimmer", "darker"]:
+            target = max(0, current - 15)
+        elif level_str in ["max", "maximum", "full", "brightest"]:
+            target = 100
+        elif level_str in ["min", "minimum", "lowest", "darkest"]:
+            target = 5  # Don't go fully black
+        else:
+            # Try parsing as integer percentage
+            digits = "".join(c for c in level_str if c.isdigit())
+            if digits:
+                target = max(0, min(100, int(digits)))
+            else:
+                return ToolResult(ok=False, message=f"Could not understand brightness level '{level}'.")
+
         sbc.set_brightness(target)
+
+        # Verify the change actually took effect
+        verify_list = sbc.get_brightness()
+        actual = verify_list[0] if isinstance(verify_list, list) else verify_list
+
         return ToolResult(
             ok=True,
             message=f"Brightness set to {target} percent.",
-            data={"brightness": target},
+            data={"brightness": target, "actual": actual, "previous": current},
         )
     except Exception as e:
+        logger.exception(f"Brightness control failed: {e}")
         return ToolResult(ok=False, message=f"Could not change brightness: {e}")
 
 

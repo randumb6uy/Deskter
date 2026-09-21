@@ -228,26 +228,108 @@ def open_app(app_name: str) -> ToolResult:
     risk="medium",
 )
 def close_app(app_name: str) -> ToolResult:
-    """Close running processes matching app name."""
+    """Close running processes matching app name with robust termination."""
+    import time
+
     indexer = get_indexer()
     matched_name, _, _ = indexer.resolve(app_name)
-    target = (matched_name or app_name).lower()
+    target = (matched_name or app_name).lower().strip()
+
+    # Also prepare the .exe variant for matching
+    target_exe = target if target.endswith(".exe") else target + ".exe"
 
     closed = 0
+    failed = 0
     for proc in psutil.process_iter(["pid", "name"]):
         try:
             p_name = proc.info["name"].lower()
-            if target in p_name or (target.endswith(".exe") and p_name == target):
+
+            # Match: target substring in process name, or exact .exe match
+            if not (target in p_name or p_name == target_exe):
+                continue
+
+            pid = proc.info["pid"]
+            logger.info(f"Attempting to close process: {p_name} (PID {pid})")
+
+            # Step 1: Try graceful terminate
+            try:
                 proc.terminate()
+                proc.wait(timeout=3)
                 closed += 1
-        except (psutil.NoSuchProcess, psutil.AccessDenied):
+                logger.info(f"Process {p_name} (PID {pid}) terminated gracefully.")
+                continue
+            except psutil.TimeoutExpired:
+                logger.warning(f"Process {p_name} (PID {pid}) did not terminate in 3s, escalating to kill.")
+            except psutil.NoSuchProcess:
+                closed += 1
+                continue
+
+            # Step 2: Force kill
+            try:
+                proc.kill()
+                proc.wait(timeout=3)
+                closed += 1
+                logger.info(f"Process {p_name} (PID {pid}) force-killed.")
+                continue
+            except psutil.TimeoutExpired:
+                logger.warning(f"Process {p_name} (PID {pid}) survived kill(), trying taskkill.")
+            except psutil.NoSuchProcess:
+                closed += 1
+                continue
+
+            # Step 3: Last resort — Windows taskkill
+            try:
+                subprocess.run(
+                    ["taskkill", "/F", "/PID", str(pid)],
+                    capture_output=True, timeout=5
+                )
+                time.sleep(0.5)
+                if not psutil.pid_exists(pid):
+                    closed += 1
+                    logger.info(f"Process {p_name} (PID {pid}) closed via taskkill.")
+                else:
+                    failed += 1
+                    logger.error(f"Process {p_name} (PID {pid}) could not be closed.")
+            except Exception as e:
+                failed += 1
+                logger.error(f"taskkill failed for PID {pid}: {e}")
+
+        except psutil.NoSuchProcess:
+            continue
+        except psutil.AccessDenied:
+            # Try taskkill as fallback for access-denied processes
+            try:
+                pid = proc.info["pid"]
+                subprocess.run(
+                    ["taskkill", "/F", "/PID", str(pid)],
+                    capture_output=True, timeout=5
+                )
+                time.sleep(0.5)
+                if not psutil.pid_exists(pid):
+                    closed += 1
+                else:
+                    failed += 1
+            except Exception:
+                failed += 1
+            continue
+        except Exception as e:
+            logger.debug(f"Error checking process: {e}")
             continue
 
     if closed > 0:
+        msg = f"Closed {app_name}."
+        if failed > 0:
+            msg += f" ({failed} instance(s) could not be closed.)"
         return ToolResult(
             ok=True,
-            message=f"Closed {app_name}.",
-            data={"closed_count": closed},
+            message=msg,
+            data={"closed_count": closed, "failed_count": failed},
+        )
+    if failed > 0:
+        return ToolResult(
+            ok=False,
+            message=f"Found {app_name} but could not close it (access denied or protected process).",
+            data={"failed_count": failed},
         )
     return ToolResult(
         ok=False,

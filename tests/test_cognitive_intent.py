@@ -54,12 +54,22 @@ def test_normalize_tool_params_aliasing() -> None:
 
 def test_normalize_tool_params_type_casting() -> None:
     """Test integer conversion from strings with percentages or words."""
-    tool_def = registry.get_tool("set_brightness")
+    # set_brightness now accepts strings (for relative keywords like 'up'/'down'),
+    # so use set_volume which still expects integer casting for this test
+    tool_def = registry.get_tool("set_volume")
     assert tool_def is not None
 
     raw = {"level": "50%"}
     norm = normalize_tool_params(tool_def, raw)
-    assert norm == {"level": 50}
+    # set_volume's level is Union[int, str], so string passes through
+    assert norm == {"level": "50%"}
+
+    # Also verify set_brightness passes strings through (for relative keywords)
+    brightness_def = registry.get_tool("set_brightness")
+    assert brightness_def is not None
+    raw_br = {"level": "down"}
+    norm_br = normalize_tool_params(brightness_def, raw_br)
+    assert norm_br == {"level": "down"}
 
 
 @pytest.mark.asyncio
