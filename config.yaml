@@ -1,0 +1,76 @@
+assistant:
+  name: "Deskter"
+  dry_run: false
+
+dashboard:
+  enabled: true
+  title: "Deskter - AI Assistant Dashboard"
+  theme: "dark-blue"
+  host: "127.0.0.1"
+  port: 8766
+
+audio:
+  input_device: null          # null = system default
+  output_device: null
+  sample_rate: 16000
+
+wakeword:
+  phrase: "hey_jarvis"
+  threshold: 0.5
+  hotkey: "<ctrl>+<alt>+<space>"
+
+vad:
+  silence_ms: 800
+  max_record_s: 15
+
+stt:
+  engine: "faster-whisper"
+  model: "small.en"
+  device: "cpu"
+  compute_type: "int8"
+
+llm:
+  provider: "ollama"
+  host: "http://localhost:11434"
+  model: "qwen2.5:3b"
+  temperature: 0.3
+  keep_alive: "30m"
+  timeout_s: 30
+  auto_start: true
+
+tts:
+  engine: "piper"
+  voice: "en_US-lessac-medium"
+  fallback: "pyttsx3"
+  speed: 1.0
+
+apps:
+  aliases:
+    code: "Code.exe"
+    chrome: "chrome.exe"
+    notepad: "notepad.exe"
+
+files:
+  allowed_roots:
+    - "~/Documents"
+    - "~/Downloads"
+    - "~/Desktop"
+
+browser:
+  bridge_host: "127.0.0.1"     # never change to 0.0.0.0
+  bridge_port: 8765
+  request_timeout_s: 5
+  blocked_domains:             # read_page / click_element refused here
+    - "accounts.google.com"
+    - "*.bank*"
+    - "*bitwarden*"
+    - "*1password*"
+    - "*lastpass*"
+
+safety:
+  confirm_high_risk: true
+  confirm_timeout_s: 8
+
+logging:
+  level: "INFO"
+  file: "logs/deskter.log"

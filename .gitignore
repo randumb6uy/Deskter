@@ -1,0 +1,45 @@
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+.venv/
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Data and logs
+logs/*
+!logs/.gitkeep
+data/app_index.json
+data/bridge_token.txt
+reports/*.json
+reports/test_report_*.md
+!reports/.gitkeep
+
+# Models
+models/*
+!models/.gitkeep
+
+# IDE & OS & Temporary
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+.pytest_cache/
+get-pip.py
+

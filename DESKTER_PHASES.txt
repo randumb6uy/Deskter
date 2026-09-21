@@ -1,0 +1,188 @@
+================================================================================
+                    DESKTER BUILD PHASES & ROADMAP
+================================================================================
+Project: Deskter - Offline Desktop Voice Assistant & Google Antigravity Bridge
+Platform: Windows 10 / 11 Pro (Fully Offline, Zero Cloud Dependency)
+Current Hardware Profile: Profile 2 (Balanced High-Fidelity)
+================================================================================
+
+--------------------------------------------------------------------------------
+PHASE 0: PROJECT SCAFFOLD & PACKAGING
+Status: [COMPLETED]
+--------------------------------------------------------------------------------
+  Description:
+    Core repository structure, Pydantic configuration loader, structured 
+    logging, event bus definitions, and pytest test suite runner.
+
+  Deliverables:
+    * src/jarvis/config.py        - Validated YAML configuration loader
+    * src/jarvis/core/events.py   - Asynchronous pub/sub EventBus
+    * src/jarvis/core/state.py    - Assistant lifecycle state definitions
+    * config.yaml                 - User-tunable runtime settings
+    * pyproject.toml              - Package metadata and dependency definitions
+
+  Acceptance Criteria:
+    * python -m jarvis --help runs cleanly.
+    * Configuration loads and validates with Pydantic.
+    * Pytest test suite collects and runs without errors.
+
+--------------------------------------------------------------------------------
+PHASE 1: ACTION LAYER & SAFETY GATE
+Status: [COMPLETED]
+--------------------------------------------------------------------------------
+  Description:
+    Central @tool decorator registry with automatic Ollama JSON schema 
+    generation, app discovery across Windows Start Menu & Registry, system 
+    hardware tools, and the multi-tier safety gate.
+
+  Deliverables:
+    * src/jarvis/actions/registry.py - @tool registry & schema generator
+    * src/jarvis/actions/apps.py     - App discovery & RapidFuzz resolution
+    * src/jarvis/actions/system.py   - Volume, brightness, battery, lock, screenshot
+    * src/jarvis/actions/browser.py  - Browser launch, URLs, web search, known sites
+    * src/jarvis/actions/files.py    - Folder opening & root-restricted file search
+    * src/jarvis/actions/utility.py  - Voice notes, countdown timers, help metadata
+    * src/jarvis/actions/media.py    - Background media keys (play/pause/skip)
+    * src/jarvis/safety/gate.py      - Low/Medium/High risk boundary gate
+
+  Acceptance Criteria:
+    * Interactive text console (--text) launches desktop apps (e.g. 'open notepad').
+    * App index scans and caches 200+ installed applications into data/app_index.json.
+    * High-risk actions (shutdown/restart) are intercepted by the safety gate.
+
+--------------------------------------------------------------------------------
+PHASE 2: BRAIN ROUTER & LOCAL LLM INTEGRATION
+Status: [COMPLETED]
+--------------------------------------------------------------------------------
+  Description:
+    The cognitive core of Deskter. Dual-path intent routing combining sub-millisecond 
+    regex/fuzzy rule matching (Fast Path) with local Ollama LLM tool calling (Slow Path), 
+    and short-term rolling conversation memory.
+
+  Deliverables:
+    * src/jarvis/brain/rules.py   - Fast-path regex & fuzzy rule matcher (<1.5ms)
+    * src/jarvis/brain/prompts.py - Deskter persona & concise spoken prompt rules
+    * src/jarvis/brain/memory.py  - Rolling conversation memory (6 turns, 5m expiry)
+    * src/jarvis/brain/llm.py     - Ollama async client with native tool schema support
+    * src/jarvis/brain/router.py  - Master intent router & action executor
+
+  Acceptance Criteria:
+    * Common single commands route in <1.5ms without touching the LLM.
+    * Multi-step conjunctions (e.g. 'open chrome and search...') fall through to LLM.
+    * Inactivity timeout automatically clears memory after 5 minutes.
+    * Graceful degradation if Ollama service is unreachable.
+
+--------------------------------------------------------------------------------
+PHASE 3: SPEECH OUTPUT & GOOGLE ANTIGRAVITY VOICE BRIDGE
+Status: [COMPLETED]
+--------------------------------------------------------------------------------
+  Description:
+    Sentence-streamed offline text-to-speech output with instant barge-in 
+    cancellation, and a full voice-controlled tool suite connecting Deskter 
+    to Google Antigravity (AGY).
+
+  Deliverables:
+    * src/jarvis/audio/tts.py                - SAPI5 (pyttsx3) + Piper ONNX engine
+    * src/jarvis/audio/player.py             - Sentence-streamed player & stop() barge-in
+    * src/jarvis/actions/antigravity_bridge.py - Antigravity voice tools:
+        - antigravity_token_usage            - Reads session tokens & turn counts
+        - antigravity_quota                  - Context headroom & daily request limits
+        - antigravity_model_info             - Active model info (Gemini 3.7 Flash)
+        - antigravity_cost_estimate          - Estimated session billing metrics
+        - antigravity_prompt                 - Queues voice coding tasks
+        - antigravity_set_mode               - Switches mode (accept edits, plan, goal)
+        - antigravity_status                 - Overall session diagnostics
+        - antigravity_slash_command          - Executes slash commands (/goal, /plan, /diff)
+        - antigravity_compact_context        - Compacts conversation context
+        - antigravity_clear_history          - Resets session prompt queue
+    * src/jarvis/testing/agent.py            - Autonomous AI Testing Agent (41 scenarios)
+
+  Acceptance Criteria:
+    * Spoken replies begin streaming in <150ms.
+    * Pressing a key or typing a command interrupts speech immediately in <15ms.
+    * Speaking 'check the usage of tokens' or 'how much quota do I have' returns live stats.
+    * 43 unit tests and 41 autonomous testing agent scenarios pass with 100% rate.
+
+--------------------------------------------------------------------------------
+PHASE 4: SPEECH INPUT, VAD & BIOMETRIC VOICEPRINT ("YOUR VOICE ONLY")
+Status: [UP NEXT]
+--------------------------------------------------------------------------------
+  Description:
+    Microphone audio capture loop, offline neural wake word detection ("Hey Deskter"), 
+    Push-to-Talk hotkey, Silero VAD, Faster-Whisper offline transcription, and 
+    biometric speaker verification so Deskter activates only when you speak.
+
+  Components to Build:
+    * src/jarvis/audio/mic.py        - 16kHz mono audio ring buffer
+    * src/jarvis/audio/wakeword.py   - OpenWakeWord ("Hey Deskter") + PTT hotkey
+    * src/jarvis/audio/speaker_id.py - Biometric voiceprint verifier (Cosine similarity >= 0.72)
+    * src/jarvis/audio/vad.py        - Silero VAD speech boundary detection
+    * src/jarvis/audio/stt.py        - Faster-Whisper int8 CPU transcription (<1.0s)
+    * Voice Enrollment Tool          - One-time setup: python main.py --enroll-voice
+
+  Acceptance Criteria:
+    * Speaking 'Hey Deskter, what time is it' wakes the assistant and speaks the reply.
+    * Speaking from an un-enrolled voice is silently discarded in <25ms (0% CPU waste).
+    * Background idle CPU load remains under 1.0%.
+
+--------------------------------------------------------------------------------
+PHASE 5: BROWSER TAB CONTROL & EXTENSION BRIDGE
+Status: [UPCOMING]
+--------------------------------------------------------------------------------
+  Description:
+    Local WebSocket bridge and Chromium Manifest V3 browser extension allowing 
+    Deskter to inspect, switch, scroll, close, and summarize existing tabs in 
+    the user's real browser profile.
+
+  Components to Build:
+    * extension/manifest.json        - Chromium MV3 extension manifest
+    * extension/background.js        - Extension service worker (ws://127.0.0.1:8765)
+    * extension/content.js           - Per-page text extractor & element finder
+    * src/jarvis/actions/browser_bridge.py - Localhost WebSocket server
+    * src/jarvis/actions/browser_tabs.py   - list_tabs, switch_tab, scroll, read_page
+
+  Acceptance Criteria:
+    * 'List my tabs' speaks open tab titles.
+    * 'Switch to YouTube' or 'Close this tab' controls open browser tabs.
+    * Sensitive domains (banking/passwords) are strictly blocked from page reading.
+    * Untrusted web content is sanitized so it cannot execute prompt injections.
+
+--------------------------------------------------------------------------------
+PHASE 6: ORCHESTRATION, TRAY ICON & POLISH
+Status: [UPCOMING]
+--------------------------------------------------------------------------------
+  Description:
+    Unified asynchronous state machine coordinating IDLE -> LISTENING -> 
+    TRANSCRIBING -> THINKING -> EXECUTING -> SPEAKING states, voice barge-in, 
+    spoken confirmation for high-risk actions, and system tray daemon.
+
+  Components to Build:
+    * src/jarvis/core/orchestrator.py - Async state machine coordinator
+    * src/jarvis/ui/tray.py           - Windows system tray icon (Start/Stop/Mute)
+    * run.bat                         - One-click launcher and Windows Task Scheduler autostart
+
+  Acceptance Criteria:
+    * Meets all performance targets on battery laptop.
+    * Survives 30 minutes of background standby + continuous commands without memory leaks.
+    * High-risk actions require spoken 'yes' confirmation within 8 seconds.
+
+--------------------------------------------------------------------------------
+PHASE 7: EXTENSIONS & ADVANCED PLUGINS (BACKLOG)
+Status: [UPCOMING]
+--------------------------------------------------------------------------------
+  Description:
+    User-defined YAML macro commands, Firefox browser extension, clipboard 
+    summarizer, local document RAG Q&A, and drop-in plugin folder.
+
+================================================================================
+SUMMARY STATUS MATRIX
+================================================================================
+Phase 0: Scaffold & Packaging                 -> [COMPLETED]
+Phase 1: Action Layer & Safety Gate           -> [COMPLETED]
+Phase 2: Brain Router & Local LLM             -> [COMPLETED]
+Phase 3: Speech Output & Antigravity Bridge   -> [COMPLETED]
+Phase 4: Speech Input & Voice Biometrics      -> [NEXT UP]
+Phase 5: Browser Tab Control & Extension      -> [UPCOMING]
+Phase 6: Orchestration, Tray & Polish         -> [UPCOMING]
+Phase 7: Advanced Extensions (Backlog)        -> [UPCOMING]
+================================================================================

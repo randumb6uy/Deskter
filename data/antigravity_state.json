@@ -1,0 +1,9 @@
+{
+  "mode": "accept_edits",
+  "total_prompts": 4,
+  "active_slash_command": "/goal",
+  "estimated_session_tokens": 6478,
+  "session_turns": 12,
+  "last_prompt": "Create a FastAPI health check route",
+  "last_timestamp": "2026-09-21 12:55:37"
+}

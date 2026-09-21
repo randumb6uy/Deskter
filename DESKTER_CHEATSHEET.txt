@@ -1,0 +1,106 @@
+================================================================================
+                    DESKTER OFFLINE AI ASSISTANT CHEATSHEET
+================================================================================
+Everything you can ask or tell Deskter (Voice & Text Console).
+All commands run 100% offline on your Windows laptop.
+================================================================================
+
+--------------------------------------------------------------------------------
+1. GOOGLE ANTIGRAVITY (AGY) VOICE BRIDGE & CODING
+--------------------------------------------------------------------------------
+  * check the usage of tokens       -> Reads current session token & turn counts
+  * how much quota do i have        -> Speaks remaining context headroom, daily requests & plan tier
+  * what model is running           -> Speaks active AI model info & reasoning tier
+  * cost estimate                   -> Speaks estimated session cost and token breakdown
+  * change mode to accept edits     -> Switches mode (accept edits, plan, goal, etc.)
+  * change mode to plan             -> Switches to task breakdown planning mode
+  * change mode to dry run          -> Switches to safe simulation mode
+  * ask Antigravity to <task>       -> Queues coding task to data/antigravity_prompts.md
+  * Antigravity prompt <task>       -> e.g. "ask Antigravity to write unit tests"
+  * antigravity status              -> Speaks session state, queued prompts, tokens
+  * list subagents                  -> Lists active background subagents (e.g. tester)
+  * compact context                 -> Compacts conversation memory to save token space
+  * clear antigravity history       -> Resets session state and prompt queue
+  * /goal                           -> Activates long-running autonomous goal execution
+  * /plan                           -> Activates planning breakdown mode
+  * /schedule                       -> Opens task scheduling mode
+  * /learn                          -> Activates persistent behavior learning mode
+  * /diff                           -> Summarizes recent workspace code changes
+
+--------------------------------------------------------------------------------
+2. SYSTEM & HARDWARE CONTROLS
+--------------------------------------------------------------------------------
+  * time / what time is it          -> Speaks current local time
+  * date / what's today's date      -> Speaks today's day, month, and date
+  * battery / check battery         -> Speaks battery charge level & power status
+  * volume <0-100>                  -> e.g. "volume 50", "set volume to 80"
+  * volume up / volume down         -> Adjusts volume by 10%
+  * mute / unmute                   -> Mutes or un-mutes system speakers
+  * brightness <0-100>              -> e.g. "brightness 70", "set brightness to 50"
+  * screenshot / take a screenshot  -> Captures full screen to Pictures folder
+  * lock / lock screen              -> Locks your Windows workstation
+  * sleep                           -> Puts PC to sleep (high risk: confirms first)
+  * shutdown                        -> Shuts down PC (high risk: confirms first)
+  * restart                         -> Reboots PC (high risk: confirms first)
+
+--------------------------------------------------------------------------------
+3. APPLICATION MANAGEMENT
+--------------------------------------------------------------------------------
+  * open <app name>                 -> e.g. "open notepad", "open chrome", "open spotify"
+  * launch <app name>               -> e.g. "launch calculator", "launch code"
+  * start <app name>                -> e.g. "start vlc", "start discord"
+  * close <app name>                -> e.g. "close notepad", "close chrome"
+  * list apps / running apps        -> Lists active visible desktop applications
+  * refresh apps                    -> Rescans Start Menu & Registry app index
+
+--------------------------------------------------------------------------------
+4. WEB BROWSING & SEARCH
+--------------------------------------------------------------------------------
+  * search for <query>              -> e.g. "search for python async tutorials"
+  * google <query>                  -> e.g. "google local weather forecast"
+  * open <known site>               -> "open youtube", "open github", "open reddit",
+                                       "open gmail", "open wikipedia", "open chatgpt"
+  * open browser                    -> Launches your default web browser
+  * open <url>                      -> e.g. "open https://google.com"
+
+--------------------------------------------------------------------------------
+5. FILES & FOLDERS
+--------------------------------------------------------------------------------
+  * open downloads                  -> Opens your Windows Downloads folder in Explorer
+  * open documents                  -> Opens your Documents folder
+  * open desktop                    -> Opens your Desktop folder
+  * find file <filename>            -> e.g. "find file invoice.pdf", "find file main.py"
+
+--------------------------------------------------------------------------------
+6. PRODUCTIVITY, NOTES & TIMERS
+--------------------------------------------------------------------------------
+  * take note <text>                -> Saves timestamped note to data/notes.txt
+  * note that <text>                -> e.g. "take note review pull request at 4pm"
+  * get notes / my notes            -> Reads back your latest saved notes
+  * set timer for <N> seconds       -> e.g. "set timer for 30 seconds"
+  * set timer for <N> minutes       -> e.g. "set timer for 5 minutes", "timer 2m"
+
+--------------------------------------------------------------------------------
+7. MEDIA CONTROLS
+--------------------------------------------------------------------------------
+  * play / pause                    -> Toggles play/pause on Spotify/YouTube/Media Player
+  * next song / next track          -> Skips to next track
+  * previous song / prev track      -> Plays previous track
+
+--------------------------------------------------------------------------------
+8. DESKTER ASSISTANT COMMANDS
+--------------------------------------------------------------------------------
+  * tools                           -> Prints all 36 registered tools & safety ratings
+  * help                            -> Speaks overview of all assistant capabilities
+  * clear                           -> Clears short-term conversation memory
+  * exit / quit / q                 -> Exits Deskter console
+
+================================================================================
+HOW TO RUN DESKTER
+================================================================================
+  * Normal Voice Mode:              python main.py --text
+  * Silent Mode (No Audio):         python main.py --text --no-voice
+  * Safe Simulation Mode:           python main.py --text --dry-run
+  * Run AI Testing Agent:           python main.py --run-agent-tests
+  * Continuous Background Test:     python main.py --continuous-test 30
+================================================================================
