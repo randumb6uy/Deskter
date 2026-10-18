@@ -1,11 +1,13 @@
 """Ollama LLM client with structured tool calling and JSON fallback."""
 
+import atexit
 import json
 import logging
 import os
 import re
 import shutil
 import subprocess
+import threading
 import time
 import urllib.request
 import urllib.error
@@ -54,8 +56,21 @@ def find_ollama_executable() -> Optional[Path]:
     return None
 
 
-def is_ollama_running(host: str = "http://localhost:11434", timeout_s: float = 1.5) -> bool:
+_spawned_ollama_process: Optional[subprocess.Popen] = None
+
+
+def normalize_host(host: str) -> str:
+    """Normalize localhost to 127.0.0.1 on Windows to avoid IPv6 resolution timeouts."""
+    if not host:
+        return "http://127.0.0.1:11434"
+    if "localhost" in host:
+        return host.replace("localhost", "127.0.0.1")
+    return host
+
+
+def is_ollama_running(host: str = "http://127.0.0.1:11434", timeout_s: float = 1.5) -> bool:
     """Check if the Ollama HTTP API server is responsive."""
+    host = normalize_host(host)
     url = f"{host.rstrip('/')}/api/tags"
     try:
         req = urllib.request.Request(url, headers={"User-Agent": "Deskter/1.0"})
@@ -65,8 +80,10 @@ def is_ollama_running(host: str = "http://localhost:11434", timeout_s: float = 1
         return False
 
 
-def start_ollama_daemon(host: str = "http://localhost:11434", timeout_s: float = 10.0) -> bool:
+def start_ollama_daemon(host: str = "http://127.0.0.1:11434", timeout_s: float = 15.0) -> bool:
     """Start Ollama server daemon in the background without creating a visible console window."""
+    global _spawned_ollama_process
+    host = normalize_host(host)
     if is_ollama_running(host, timeout_s=1.0):
         logger.info(f"Ollama daemon is already running at {host}")
         return True
@@ -83,16 +100,21 @@ def start_ollama_daemon(host: str = "http://localhost:11434", timeout_s: float =
     try:
         creation_flags = 0
         if os.name == "nt":
-            # Detach and hide console window on Windows
+            # Detach, hide console, and create new process group on Windows
             CREATE_NO_WINDOW = 0x08000000
             DETACHED_PROCESS = 0x00000008
-            creation_flags = CREATE_NO_WINDOW | DETACHED_PROCESS
+            CREATE_NEW_PROCESS_GROUP = 0x00000200
+            creation_flags = CREATE_NO_WINDOW | DETACHED_PROCESS | CREATE_NEW_PROCESS_GROUP
 
-        subprocess.Popen(
+        env = os.environ.copy()
+        env["OLLAMA_HOST"] = "127.0.0.1:11434"
+
+        _spawned_ollama_process = subprocess.Popen(
             [str(exe), "serve"],
             stdout=subprocess.DEVNULL,
             stderr=subprocess.DEVNULL,
             stdin=subprocess.DEVNULL,
+            env=env,
             creationflags=creation_flags,
             close_fds=True if os.name != "nt" else False,
         )
@@ -112,15 +134,54 @@ def start_ollama_daemon(host: str = "http://localhost:11434", timeout_s: float =
         return False
 
 
-def ensure_ollama_running(config: LlmConfig, timeout_s: float = 10.0) -> bool:
+def stop_ollama_daemon() -> None:
+    """Stop the Ollama daemon if it was spawned by Deskter."""
+    global _spawned_ollama_process
+    if _spawned_ollama_process:
+        try:
+            logger.info("Stopping Ollama daemon process...")
+            _spawned_ollama_process.terminate()
+            _spawned_ollama_process.wait(timeout=3.0)
+        except Exception:
+            try:
+                _spawned_ollama_process.kill()
+            except Exception:
+                pass
+        _spawned_ollama_process = None
+
+
+def warmup_model_async(config: LlmConfig) -> None:
+    """Preload model into GPU VRAM in background thread so first turn is instant."""
+    def _warmup() -> None:
+        try:
+            host = normalize_host(config.host)
+            client = ollama.Client(host=host)
+            client.chat(
+                model=config.model,
+                messages=[{"role": "user", "content": "hi"}],
+                options={"num_predict": 1},
+                keep_alive=config.keep_alive,
+            )
+            logger.info(f"Ollama model '{config.model}' successfully warmed up in VRAM.")
+        except Exception as e:
+            logger.debug(f"Ollama model warmup skipped: {e}")
+
+    threading.Thread(target=_warmup, daemon=True, name="ollama-warmup").start()
+
+
+def ensure_ollama_running(config: LlmConfig, timeout_s: float = 10.0, warmup: bool = True) -> bool:
     """Ensure Ollama server is running if auto_start is enabled in config."""
     if not config.auto_start:
         return is_ollama_running(config.host)
 
-    if is_ollama_running(config.host):
-        return True
+    running = is_ollama_running(config.host)
+    if not running:
+        running = start_ollama_daemon(config.host, timeout_s=timeout_s)
 
-    return start_ollama_daemon(config.host, timeout_s=timeout_s)
+    if running and warmup:
+        warmup_model_async(config)
+
+    return running
 
 
 @dataclass
@@ -145,7 +206,7 @@ class LlmClient:
 
     def __init__(self, config: LlmConfig) -> None:
         self.config = config
-        self.client = ollama.AsyncClient(host=config.host)
+        self.client = ollama.AsyncClient(host=normalize_host(config.host))
         if config.auto_start:
             ensure_ollama_running(config)
 

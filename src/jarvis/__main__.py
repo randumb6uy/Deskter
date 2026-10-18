@@ -9,7 +9,7 @@ from pathlib import Path
 from jarvis import __version__
 from jarvis.actions.registry import registry
 from jarvis.audio.player import AudioPlayer
-from jarvis.brain.llm import ensure_ollama_running
+from jarvis.brain.llm import ensure_ollama_running, stop_ollama_daemon
 from jarvis.brain.router import Router
 from jarvis.config import Config, load_config
 from jarvis.core.events import EventBus
@@ -157,12 +157,16 @@ def main() -> None:
         else:
             print(f"[Deskter Warning] Could not start Ollama server at {config.llm.host}.")
 
-    if args.text or not sys.stdin.isatty():
-        asyncio.run(run_text_cli(config, gate, bus, enable_voice=enable_voice))
-    else:
-        # Default: start text CLI in Brain Mode
-        print(f"Starting {config.assistant.name} in interactive text console (Phase 3 Voice & Brain)...")
-        asyncio.run(run_text_cli(config, gate, bus, enable_voice=enable_voice))
+    try:
+        if args.text or not sys.stdin.isatty():
+            asyncio.run(run_text_cli(config, gate, bus, enable_voice=enable_voice))
+        else:
+            # Default: start text CLI in Brain Mode
+            print(f"Starting {config.assistant.name} in interactive text console (Phase 3 Voice & Brain)...")
+            asyncio.run(run_text_cli(config, gate, bus, enable_voice=enable_voice))
+    finally:
+        if config.llm.stop_on_exit:
+            stop_ollama_daemon()
 
 
 if __name__ == "__main__":

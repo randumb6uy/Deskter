@@ -1,9 +1,12 @@
 """Browser launching, URL navigation, and web search tools."""
 
+import logging
 import os
 import urllib.parse
 import webbrowser
 from jarvis.actions.registry import ToolResult, tool
+
+logger = logging.getLogger("jarvis.actions.browser")
 
 
 @tool(

@@ -1,3 +1,4 @@
+
 # JARVIS: Offline Desktop Voice Assistant
 
 > This file is the source of truth for the project. Read it fully before writing code.

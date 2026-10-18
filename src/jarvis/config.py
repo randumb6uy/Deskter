@@ -59,6 +59,7 @@ class LlmConfig(BaseModel):
     keep_alive: str = "30m"
     timeout_s: int = 30
     auto_start: bool = True
+    stop_on_exit: bool = False
     routing_mode: str = "llm_first"  # Options: "llm_first", "rules_first", "llm_only"
 
 

@@ -31,12 +31,13 @@ stt:
 
 llm:
   provider: "ollama"
-  host: "http://localhost:11434"
+  host: "http://127.0.0.1:11434"
   model: "qwen2.5:3b"
   temperature: 0.3
   keep_alive: "30m"
   timeout_s: 30
-  auto_start: true
+  auto_start: true            # Automatically spin up Ollama background server when Deskter starts
+  stop_on_exit: false         # Keep server running in background for instant relaunch (set true to shutdown Ollama on app exit)
   routing_mode: "llm_first"   # Options: "llm_first" (dynamic AI intent), "rules_first", "llm_only"
 
 
